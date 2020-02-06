@@ -24,7 +24,7 @@ parser.add_argument('--epsilon-start',  type=float, default=1.0, help=('Starting
 parser.add_argument('--epsilon-min', type=float, default=.1, help='Minimum epsilon.')
 parser.add_argument('--epsilon-decay', type=float, default=20000, help=('Number of steps to minimum epsilon.'))
 parser.add_argument('--max-history', type=int, default=10000, help=('Maximum number of steps stored in replay'))
-parser.add_argument('--batch-size', type=int, default=32, help='Batch size.')
+parser.add_argument('--batch-size', type=int, default=64, help='Batch size.')
 parser.add_argument('--freeze-interval', type=int, default=200, help=('Interval between target freezes.'))
 parser.add_argument('--update-frequency', type=int, default=4, help=('Number of actions before each SGD update.'))
 parser.add_argument('--termination-reg', type=float, default=0.01, help=('Regularization to decrease termination prob.'))
@@ -61,6 +61,8 @@ def run(args):
     option_critic_prime = deepcopy(option_critic)
 
     optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
+    clip_value = 1
+    clip_grad_value_(option_critic.parameters(), clip_value)
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
