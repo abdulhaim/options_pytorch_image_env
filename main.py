@@ -6,11 +6,16 @@ from copy import deepcopy
 from option_critic import OptionCriticConv
 from option_critic import critic_loss as critic_loss_fn
 from option_critic import actor_loss as actor_loss_fn
-
+import cv2
 from experience_replay import ReplayBuffer
 from utils import make_env, to_tensor
 from logger import Logger
 import time
+from common.minipacman import MiniPacman
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 parser = argparse.ArgumentParser(description="Option Critic PyTorch")
 parser.add_argument('--env', default='CartPole-v0', help='ROM to run')
@@ -29,7 +34,7 @@ parser.add_argument('--freeze-interval', type=int, default=200, help=('Interval 
 parser.add_argument('--update-frequency', type=int, default=4, help=('Number of actions before each SGD update.'))
 parser.add_argument('--termination-reg', type=float, default=0.01, help=('Regularization to decrease termination prob.'))
 parser.add_argument('--entropy-reg', type=float, default=0.01, help=('Regularization to increase policy entropy.'))
-parser.add_argument('--num-options', type=int, default=1, help=('Number of options to create.'))
+parser.add_argument('--num-options', type=int, default=4, help=('Number of options to create.'))
 parser.add_argument('--temp', type=float, default=1, help='Action distribution softmax tempurature param.')
 
 parser.add_argument('--max_steps_ep', type=int, default=18000, help='number of maximum steps per episode.')
@@ -40,13 +45,23 @@ parser.add_argument('--logdir', type=str, default='runs', help='Directory for lo
 parser.add_argument('--exp', type=str, default=None, help='optional experiment name')
 parser.add_argument('--switch-goal', type=bool, default=False, help='switch goal after 2k eps')
 
+
+def displayImage(image, step, reward):
+    s = "step" + str(step) + " reward " + str(reward)
+    plt.title(s)
+    plt.imshow(image)
+    #cv2.imwrite('foo' + str(step) + '.png', image)
+    plt.savefig('foo' + str(step) + '.png')
+
+    # plt.show()
+
 def run(args):
     env = make_env(args.env)
     option_critic = OptionCriticConv 
     device = torch.device('cuda' if torch.cuda.is_available() and args.cuda else 'cpu')
 
     option_critic = option_critic(
-        in_features=1,
+        in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,
         num_options=args.num_options,
         temperature=args.temp,
@@ -62,7 +77,7 @@ def run(args):
 
     optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
     clip_value = 1
-    clip_grad_value_(option_critic.parameters(), clip_value)
+    #torch.nn.utils.clip_grad_norm(option_critic.parameters(), clip_value)
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -72,6 +87,8 @@ def run(args):
     logger = Logger(logdir=args.logdir, run_name=f"{OptionCriticConv.__name__}-{args.env}-{args.exp}-{time.ctime()}")
 
     steps = 0
+    cum_reward=0
+    total_steps = 0
     while steps < args.max_steps_total:
         rewards = 0
         option_lengths = {opt:[] for opt in range(args.num_options)}
@@ -101,6 +118,7 @@ def run(args):
 
             next_obs, reward, done, _ = env.step(action)
 
+
             buffer.push(obs, current_option, reward, next_obs, done)
 
             old_state = state
@@ -108,6 +126,8 @@ def run(args):
 
             option_termination, greedy_option = option_critic.predict_option_termination(state, current_option)
             rewards += reward
+            clear_output()
+            displayImage(next_obs.transpose(1, 2, 0), total_steps, rewards)
 
             actor_loss, critic_loss = None, None
             if len(buffer) > args.batch_size:
@@ -129,13 +149,18 @@ def run(args):
 
             # update global steps etc
             steps += 1
+            total_steps+=1
             ep_steps += 1
             curr_op_len += 1
             obs = next_obs
-
+            cum_reward += (args.gamma**total_steps)*reward
+            logger.log_reward(ep_steps,cum_reward)
+            cum_reward
             logger.log_data(steps, actor_loss, critic_loss, entropy.item(), epsilon)
 
+
         logger.log_episode(steps, rewards, option_lengths, ep_steps, epsilon)
+        cum_reward=0
 
 if __name__=="__main__":
     args = parser.parse_args()

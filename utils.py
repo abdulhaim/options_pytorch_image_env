@@ -5,8 +5,8 @@ import torch
 from gym.wrappers import AtariPreprocessing, TransformReward
 from gym.wrappers import FrameStack as FrameStack_
 
-from fourrooms import Fourrooms
-
+# from fourrooms import Fourrooms
+from common.minipacman import MiniPacman
 
 class LazyFrames(object):
     def __init__(self, frames):
@@ -34,7 +34,8 @@ class FrameStack(FrameStack_):
         return LazyFrames(list(self.frames))
 
 def make_env(env_name):
-    return Fourrooms()
+    mode = 'regular'
+    return MiniPacman(mode, 1000)
 
 def to_tensor(obs):
     obs = np.asarray(obs)

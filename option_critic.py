@@ -38,35 +38,27 @@ class OptionCriticConv(nn.Module):
         self.num_steps = 0
         
         self.features = nn.Sequential(
-            nn.Conv2d(self.in_channels, 32, kernel_size=8, stride=4),
+            nn.Conv2d(self.in_channels, 16, kernel_size=3, stride=1),
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.Conv2d(16, 16, kernel_size=3, stride=2),
             nn.ReLU(),
             nn.modules.Flatten(),
-            nn.Linear(self.magic_number, 512),
+            nn.Linear(768, 256),
             nn.ReLU()
         )
 
-        self.Q            = nn.Linear(512, num_options)                 # Policy-Over-Options
-        self.terminations = nn.Linear(512, num_options)                 # Option-Termination
-        self.options_W = nn.Parameter(torch.zeros(num_options, 512, num_actions))
+        self.Q            = nn.Linear(256, num_options)                 # Policy-Over-Options
+        self.terminations = nn.Linear(256, num_options)                 # Option-Termination
+        self.options_W = nn.Parameter(torch.zeros(num_options, 256, num_actions))
         self.options_b = nn.Parameter(torch.zeros(num_options, num_actions))
 
         self.to(device)
         self.train(not testing)
 
     def get_state(self, obs):
-        if(len(obs.shape)==2):
+        if obs.ndim < 4:
             obs = obs.unsqueeze(0)
-            obs = obs.unsqueeze(0)
-        elif(len(obs.shape)==3):
-            obs = obs.unsqueeze(1)
-        else:
-            raise ValueError("Incorrect shape for state")
-
-        assert len(obs.shape) == 4 # pytorch expects (batch_size, channels, height, width)
+        obs = obs.to(self.device)
         state = self.features(obs)
         return state
 

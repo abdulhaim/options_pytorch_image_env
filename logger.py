@@ -46,6 +46,9 @@ class Logger():
         self.writer.add_scalar(tag="policy_entropy", scalar_value=entropy, global_step=step)
         self.writer.add_scalar(tag="epsilon",scalar_value=epsilon, global_step=step)
 
+    def log_reward(self, step, reward):
+        self.writer.add_scalar(tag="cumulative_reward",scalar_value=reward, global_step=step)
+
 if __name__=="__main__":
     logger = Logger(logdir='runs/', run_name='test_model-test_env')
     steps = 200 ; reward = 5 ; option_lengths = {opt: np.random.randint(0,5,size=(5)) for opt in range(5)} ; ep_steps = 50
