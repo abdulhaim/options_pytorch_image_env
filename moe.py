@@ -14,6 +14,19 @@ import sys
 
 
 class MOE(nn.Module):
+    """
+    Gated mixture of experts layer with 3-level hierarchy
+    args:
+        inputs: integer - size of the input
+        hidden: an integer - hidden size of the experts
+        outputs: integer - size of the output
+        experts: an integer - number of experts
+        fc1: fully connected layer 1
+        fc2: fully connected layer 2
+        fc3: fully connected layer 3
+        shared_module_list: network shared by all intra-option policies
+
+    """
     def __init__(self, inputs,hidden,outputs,experts, fc1,fc2,fc3, shared_module_list):
         super(MOE, self).__init__()
         self.module_list = nn.ModuleList()
@@ -65,5 +78,4 @@ class MOE(nn.Module):
         
         return out[0]
         
-
             
