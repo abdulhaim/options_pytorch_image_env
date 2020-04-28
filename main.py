@@ -45,7 +45,6 @@ parser.add_argument('--logdir', type=str, default='runs', help='Directory for lo
 parser.add_argument('--exp', type=str, default=None, help='optional experiment name')
 parser.add_argument('--switch-goal', type=bool, default=False, help='switch goal after 2k eps')
 
-
 def displayImage(image, step, reward):
     s = "step" + str(step) + " reward " + str(reward)
     plt.title(s)
@@ -68,7 +67,7 @@ def run(args):
         eps_min=args.epsilon_min,
         eps_decay=args.epsilon_decay,
         eps_test=args.optimal_eps,
-        device=device
+        device=device, 
     )
 
     # Create a prime network for more stable Q values

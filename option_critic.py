@@ -8,6 +8,21 @@ import numpy as np
 from utils import to_tensor
 from utils import generate_features
 
+import gym
+import numpy as np
+import torch
+from torch.autograd import Variable
+import argparse
+import uuid
+import random
+import importlib
+
+from moe import MOE
+import math
+import torch.nn as nn
+from torch.nn.functional import relu, avg_pool2d, softmax, sigmoid
+import sys
+
 
 class OptionCriticConv(nn.Module):
     def __init__(self,
@@ -40,10 +55,26 @@ class OptionCriticConv(nn.Module):
         self.num_steps = 0
 
         self.features = generate_features(env_name, self.in_channels)
-
         self.Q            = nn.Linear(256, num_options)                 # Policy-Over-Options
         self.terminations = nn.Linear(256, num_options)                 # Option-Termination
-        self.options_W = nn.Parameter(torch.zeros(num_options, 256, num_actions))
+
+        self.experts = 5
+        self.shared_module_list = nn.ModuleList()
+        self.fc1 = {}
+        self.fc2 = {}
+        self.fc3 = {}
+        self.features_output_size = 256
+        self.hidden = 128
+
+        for i in range(self.experts):
+            self.fc1[i] = nn.Linear(self.features_output_size,self.hidden)
+            self.shared_module_list += [self.fc1[i]]
+            self.fc2[i] = nn.Linear(self.hidden,self.hidden)
+            self.shared_module_list += [self.fc2[i]]
+            self.fc3[i] = nn.Linear(self.hidden,self.num_actions)
+            self.shared_module_list += [self.fc3[i]]
+
+        self.options_W = nn.ModuleList([MOE(self.features_output_size,self.hidden,self.num_actions,int(self.experts), self.fc1, self.fc2, self.fc3, self.shared_module_list) for i in range(self.num_options)])
         self.options_b = nn.Parameter(torch.zeros(num_options, num_actions))
 
         self.to(device)
@@ -71,7 +102,7 @@ class OptionCriticConv(nn.Module):
         return self.terminations(state).sigmoid() 
 
     def get_action(self, state, option):
-        logits = state @ self.options_W[option] + self.options_b[option]
+        logits = self.options_W[option].forward(state) + self.options_b[option]
         action_dist = (logits / self.temperature).softmax(dim=-1)
         action_dist = Categorical(action_dist)
 
@@ -80,6 +111,17 @@ class OptionCriticConv(nn.Module):
         entropy = action_dist.entropy()
 
         return action.item(), logp, entropy
+
+    # def get_action(self, state, option):
+    #     logits = state @ self.options_W[option].w_gate 
+    #     action_dist = (logits / self.temperature).softmax(dim=-1)
+    #     action_dist = Categorical(action_dist)
+
+    #     action = action_dist.sample()
+    #     logp = action_dist.log_prob(action)
+    #     entropy = action_dist.entropy()
+
+    #     return action.item(), logp, entropy
     
     def greedy_option(self, state):
         Q = self.get_Q(state)
