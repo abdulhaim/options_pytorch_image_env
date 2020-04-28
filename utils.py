@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import torch
+import torch.nn as nn
 
 from gym.wrappers import AtariPreprocessing, TransformReward
 from gym.wrappers import FrameStack as FrameStack_
@@ -34,8 +35,35 @@ class FrameStack(FrameStack_):
         return LazyFrames(list(self.frames))
 
 def make_env(env_name):
-    mode = 'regular'
-    return MiniPacman(mode, 1000)
+    if env_name == 'pacman':
+        mode = 'regular'
+        env = MiniPacman(mode, 1000)
+    elif env_name == 'procgen_maze':
+        env = gym.make("procgen:procgen-maze-v0")
+    return env 
+
+def generate_features(env_name,in_channels):
+    if env_name == 'procgen_maze':
+        features = nn.Sequential(
+            nn.Conv2d(in_channels, 16, kernel_size=2, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(16, 16, kernel_size=1, stride=2),
+            nn.ReLU(),
+            nn.modules.Flatten(),
+            nn.Linear(256, 256),
+            nn.ReLU()
+        )
+    elif env_name == "pacman":
+        features = nn.Sequential(
+            nn.Conv2d(in_channels, 16, kernel_size=3, stride=1),
+            nn.ReLU(),
+            nn.Conv2d(16, 16, kernel_size=3, stride=2),
+            nn.ReLU(),
+            nn.modules.Flatten(),
+            nn.Linear(768, 256),
+            nn.ReLU()
+        )
+    return features
 
 def to_tensor(obs):
     obs = np.asarray(obs)

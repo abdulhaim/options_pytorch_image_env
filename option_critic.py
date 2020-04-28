@@ -6,10 +6,12 @@ from math import exp
 import numpy as np
 
 from utils import to_tensor
+from utils import generate_features
 
 
 class OptionCriticConv(nn.Module):
     def __init__(self,
+                env_name,
                 in_features,
                 num_actions,
                 num_options,
@@ -36,16 +38,8 @@ class OptionCriticConv(nn.Module):
         self.eps_decay = eps_decay
         self.eps_test  = eps_test
         self.num_steps = 0
-        
-        self.features = nn.Sequential(
-            nn.Conv2d(self.in_channels, 16, kernel_size=3, stride=1),
-            nn.ReLU(),
-            nn.Conv2d(16, 16, kernel_size=3, stride=2),
-            nn.ReLU(),
-            nn.modules.Flatten(),
-            nn.Linear(768, 256),
-            nn.ReLU()
-        )
+
+        self.features = generate_features(env_name, self.in_channels)
 
         self.Q            = nn.Linear(256, num_options)                 # Policy-Over-Options
         self.terminations = nn.Linear(256, num_options)                 # Option-Termination

@@ -18,7 +18,7 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 parser = argparse.ArgumentParser(description="Option Critic PyTorch")
-parser.add_argument('--env', default='CartPole-v0', help='ROM to run')
+parser.add_argument('--env', default='pacman', help='ROM to run')
 parser.add_argument('--optimal-eps', type=float, default=0.05, help='Epsilon when playing optimally')
 parser.add_argument('--frame-skip', default=4, type=int, help='Every how many frames to process')
 parser.add_argument('--learning-rate',type=float, default=.0005, help='Learning rate')
@@ -50,10 +50,8 @@ def displayImage(image, step, reward):
     s = "step" + str(step) + " reward " + str(reward)
     plt.title(s)
     plt.imshow(image)
-    #cv2.imwrite('foo' + str(step) + '.png', image)
-    plt.savefig('foo' + str(step) + '.png')
 
-    # plt.show()
+    plt.show()
 
 def run(args):
     env = make_env(args.env)
@@ -61,6 +59,7 @@ def run(args):
     device = torch.device('cuda' if torch.cuda.is_available() and args.cuda else 'cpu')
 
     option_critic = option_critic(
+        env_name = args.env,
         in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,
         num_options=args.num_options,
@@ -94,7 +93,6 @@ def run(args):
         option_lengths = {opt:[] for opt in range(args.num_options)}
 
         obs = env.reset()
-
         state = option_critic.get_state(to_tensor(obs))
 
         greedy_option  = option_critic.greedy_option(state)
@@ -126,8 +124,8 @@ def run(args):
 
             option_termination, greedy_option = option_critic.predict_option_termination(state, current_option)
             rewards += reward
-            clear_output()
-            displayImage(next_obs.transpose(1, 2, 0), total_steps, rewards)
+
+            #displayImage(next_obs.transpose(1, 2, 0), total_steps, rewards)
 
             actor_loss, critic_loss = None, None
             if len(buffer) > args.batch_size:
