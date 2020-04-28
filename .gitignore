@@ -11,3 +11,5 @@ settings.json
 runs/*
 analysis/*
 venv/*
+.ipynb_checkpoints/*
+
