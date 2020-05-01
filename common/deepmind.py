@@ -259,7 +259,7 @@ class PillEater(object):
 
       occupied_map[from_[0]:to[0], from_[1]:to[1]] = 1
 
-      actor['pos'] = get_random_position(occupied_map)
+      actor['pos'] = (11,4) #get_random_position(occupied_map)
       actor['dir'] = np.random.randint(4)
     else:
       actor['pos'] = get_random_position(self.walls)
