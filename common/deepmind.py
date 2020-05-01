@@ -134,12 +134,12 @@ class PillEater(object):
 
   def __init__(self, mode, frame_cap=3000):
     assert mode in PillEater.MODES
-    self.nghosts_init = 1
+    self.nghosts_init = 0
     self.ghost_speed_init = 0.5
     self.ghost_speed = self.ghost_speed_init
     self.ghost_speed_increase = 0.1
     self.end_on_collect = False
-    self.npills = 2
+    self.npills = 0
     self.pill_duration = 20
     self.seed = 123
     self.discount = 1
