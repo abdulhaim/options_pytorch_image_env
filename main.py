@@ -13,7 +13,6 @@ from logger import Logger
 import time
 from common.minipacman import MiniPacman
 import matplotlib.pyplot as plt
-from IPython.display import clear_output
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
