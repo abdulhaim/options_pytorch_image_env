@@ -26,17 +26,17 @@ parser.add_argument('--rms-epsilon', type=float, default=.01, help='Denominator 
 parser.add_argument('--gamma', type=float, default=.99, help='Discount rate')
 parser.add_argument('--epsilon-start',  type=float, default=1.0, help=('Starting value for epsilon.'))
 parser.add_argument('--epsilon-min', type=float, default=.1, help='Minimum epsilon.')
-parser.add_argument('--epsilon-decay', type=float, default=20000, help=('Number of steps to minimum epsilon.'))
+parser.add_argument('--epsilon-decay', type=float, default=200000, help=('Number of steps to minimum epsilon.'))
 parser.add_argument('--max-history', type=int, default=10000, help=('Maximum number of steps stored in replay'))
 parser.add_argument('--batch-size', type=int, default=64, help='Batch size.')
 parser.add_argument('--freeze-interval', type=int, default=200, help=('Interval between target freezes.'))
 parser.add_argument('--update-frequency', type=int, default=4, help=('Number of actions before each SGD update.'))
 parser.add_argument('--termination-reg', type=float, default=0.01, help=('Regularization to decrease termination prob.'))
 parser.add_argument('--entropy-reg', type=float, default=0.01, help=('Regularization to increase policy entropy.'))
-parser.add_argument('--num-options', type=int, default=4, help=('Number of options to create.'))
+parser.add_argument('--num-options', type=int, default=5, help=('Number of options to create.'))
 parser.add_argument('--temp', type=float, default=1, help='Action distribution softmax tempurature param.')
 
-parser.add_argument('--max_steps_ep', type=int, default=18000, help='number of maximum steps per episode.')
+parser.add_argument('--max_steps_ep', type=int, default=180000, help='number of maximum steps per episode.')
 parser.add_argument('--max_steps_total', type=int, default=int(4e6), help='number of maximum steps to take.') # bout 4 million
 parser.add_argument('--cuda', type=bool, default=True, help='Enable CUDA training (recommended if possible).')
 parser.add_argument('--seed', type=int, default=0, help='Random seed for numpy, torch, random.')
@@ -59,7 +59,7 @@ def run(args):
 
     option_critic = option_critic(
         env_name = args.env,
-        in_features=env.observation_space.shape[0],
+        in_features=env.observation_space.shape,
         num_actions=env.action_space.n,
         num_options=args.num_options,
         temperature=args.temp,
@@ -75,7 +75,7 @@ def run(args):
 
     optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
     clip_value = 1
-    #torch.nn.utils.clip_grad_norm(option_critic.parameters(), clip_value)
+    torch.nn.utils.clip_grad_norm(option_critic.parameters(), clip_value)
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)

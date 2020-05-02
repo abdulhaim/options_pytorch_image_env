@@ -46,7 +46,7 @@ def generate_features(env_name,in_channels):
     if env_name == 'procgen_maze':
         # domain: https://github.com/openai/procgen
         features = nn.Sequential(
-            nn.Conv2d(in_channels, 16, kernel_size=2, stride=2),
+            nn.Conv2d(in_channels[0], 16, kernel_size=2, stride=2),
             nn.ReLU(),
             nn.Conv2d(16, 16, kernel_size=1, stride=2),
             nn.ReLU(),
@@ -57,12 +57,9 @@ def generate_features(env_name,in_channels):
     elif env_name == "pacman":
         # domain: https://github.com/higgsfield/Imagination-Augmented-Agents/blob/master/common/deepmind.py
         features = nn.Sequential(
-            nn.Conv2d(in_channels, 16, kernel_size=3, stride=1),
+            nn.Conv2d(in_channels[0], 16, kernel_size=3, stride=1),
             nn.ReLU(),
             nn.Conv2d(16, 16, kernel_size=3, stride=2),
-            nn.ReLU(),
-            nn.modules.Flatten(),
-            nn.Linear(768, 256),
             nn.ReLU()
         )
     return features

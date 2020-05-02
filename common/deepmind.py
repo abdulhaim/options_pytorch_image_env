@@ -139,7 +139,7 @@ class PillEater(object):
     self.ghost_speed = self.ghost_speed_init
     self.ghost_speed_increase = 0.1
     self.end_on_collect = False
-    self.npills = 0
+    self.npills = 1
     self.pill_duration = 20
     self.seed = 123
     self.discount = 1
@@ -176,7 +176,7 @@ class PillEater(object):
     self.timer = 0
     if self.mode == 'regular':
       self.step_reward = 0
-      self.food_reward = 1
+      self.food_reward = 0
       self.big_pill_reward = 2
       self.ghost_hunt_reward = 5
       self.ghost_death_reward = 0
@@ -262,7 +262,7 @@ class PillEater(object):
       actor['pos'] = (11,4) #get_random_position(occupied_map)
       actor['dir'] = np.random.randint(4)
     else:
-      actor['pos'] =(11,4)
+      actor['pos'] = (11,4) #get_random_position(self.walls)
       actor['dir'] = np.random.randint(4)
 
     return actor

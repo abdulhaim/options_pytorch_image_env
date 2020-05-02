@@ -7,7 +7,7 @@ import numpy as np
 
 from utils import to_tensor
 from utils import generate_features
-
+import torch.autograd as autograd
 
 class OptionCriticConv(nn.Module):
     def __init__(self,
@@ -39,8 +39,18 @@ class OptionCriticConv(nn.Module):
         self.eps_test  = eps_test
         self.num_steps = 0
 
-        self.features = generate_features(env_name, self.in_channels)
+        self.features =  nn.Sequential(
+            nn.Conv2d(self.in_channels[0], 16, kernel_size=3, stride=1),
+            nn.ReLU(),
+            nn.Conv2d(16, 16, kernel_size=3, stride=2),
+            nn.ReLU()
+        )
+        print(self.feature_size())
 
+        self.fc = nn.Sequential(
+            nn.Linear(768, 256),
+            nn.ReLU(),
+        )
         self.Q            = nn.Linear(256, num_options)                 # Policy-Over-Options
         self.terminations = nn.Linear(256, num_options)                 # Option-Termination
         self.options_W = nn.Parameter(torch.zeros(num_options, 256, num_actions))
@@ -49,11 +59,16 @@ class OptionCriticConv(nn.Module):
         self.to(device)
         self.train(not testing)
 
+    def feature_size(self):
+            return self.features(autograd.Variable(torch.zeros(1, *self.in_channels))).view(1, -1).size
+
     def get_state(self, obs):
         if obs.ndim < 4:
             obs = obs.unsqueeze(0)
         obs = obs.to(self.device)
         state = self.features(obs)
+        state = state.view(state.size(0), -1)
+        state = self.fc(state)
         return state
 
     def get_Q(self, state):
@@ -121,7 +136,13 @@ def critic_loss(model, model_prime, data_batch, args):
 
     # to update Q we want to use the actual network, not the prime
     td_err = (Q[batch_idx, options] - gt.detach()).pow(2).mul(0.5).mean()
-    return td_err
+
+    # self.entropy = -tf.reduce_sum(next_options_term_prob * tf.log(next_options_term_prob), 1, name="entropy_options")
+    # entropy_losses = - (tf.log(next_termination_probs) * gt + 0.01 * self.entropy)
+    # total_entropy_loss = tf.reduce_sum(self.losses, name="loss")
+
+    # td_err -= total_entropy_loss
+    return td_err 
 
 def actor_loss(obs, option, logp, entropy, reward, done, next_obs, model, model_prime, args):
     state = model.get_state(to_tensor(obs))
