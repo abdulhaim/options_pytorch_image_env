@@ -150,7 +150,7 @@ def run(args):
             ep_steps += 1
             curr_op_len += 1
             obs = next_obs
-            cum_reward += (args.gamma**total_steps)*reward
+            cum_reward += (args.gamma**ep_steps)*reward
             logger.log_reward(ep_steps,cum_reward)
             cum_reward
             logger.log_data(steps, actor_loss, critic_loss, entropy.item(), epsilon)
